@@ -1,0 +1,27 @@
+html, body {
+  margin: 0;
+}
+
+.audiostream-container {
+  padding: 14px;
+}
+
+video {
+  background-color: #2f2;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  margin: 4px;
+}
+
+canvas {
+  width: 400px;
+  height: 400px;
+  margin: 16px;
+}
+
+pre {
+  padding: 14px;
+  margin: 0;
+  border-top: 1px solid black;
+}
