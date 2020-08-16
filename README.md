@@ -9,4 +9,4 @@ You need to generate a self-signed certificate to run this as voice media can on
     openssl x509 -req -days 9999 -in csr.pem -signkey key.pem -out cert.pem
     rm csr.pem
 
-Install dependencies with `npm install` and run with `npm start`
+Install dependencies with `npm install` and run with `npm start`. Open `https://127.0.0.1:3000`, `https://yourexternalip:3000`, or `https://yourlanip:3000` in a supporting browser on multiple devices.
