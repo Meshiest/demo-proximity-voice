@@ -57,7 +57,6 @@ function playAudioStream(stream, target) {
 
 const socket = io();
 let id, peer;
-const calls = {};
 
 // create peer, setup handlers
 function initPeer() {
@@ -71,7 +70,6 @@ function initPeer() {
   peer.on('call', async call => {
     log('call from', call.peer);
     call.answer(await getAudioStream());
-    calls[call.peer] = call;
     receiveCall(call);
   });
 }
@@ -94,6 +92,7 @@ function receiveCall(call) {
 
 // setup peer when user receives id
 socket.on('id', async connId => {
+  // this only happens if we lose connection with the server
   if (id) {
     log('destroying old identity', id, 'and replacing with', connId);
     peer.destroy();
