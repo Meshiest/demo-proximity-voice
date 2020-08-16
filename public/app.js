@@ -1,6 +1,8 @@
 const $ = document.querySelector.bind(document);
 const log = (...args) => logs.innerText += args.join(' ') + '\n';
 const GAME_SIZE = 400;
+const SOUND_CUTOFF_RANGE = 50;
+const SOUND_NEAR_RANGE = 5;
 
 const socket = io();
 
@@ -96,6 +98,29 @@ const lastPos = {x: 0, y: 0};
 const cursor = {down: false, x: 0, y: 0};
 const players = [];
 
+function calcVolumes(listenerPos, soundPos) {
+  // calulate angle and distance from listener to sound
+  const theta = Math.atan2(soundPos.y - listenerPos.y, soundPos.x - listenerPos.x);
+  const dist = Math.hypot(soundPos.y - listenerPos.y, soundPos.x - listenerPos.x);
+  const scale = 1 - (dist - SOUND_NEAR_RANGE) / (SOUND_CUTOFF_RANGE - SOUND_NEAR_RANGE);
+
+  // target is too far away, no volume
+  if (dist > SOUND_CUTOFF_RANGE)
+    return [0, 0];
+
+  // target is very close, max volume
+  if (dist < SOUND_NEAR_RANGE)
+    return [1, 1];
+
+  const cos = Math.cos(theta);
+  const sin = Math.sin(theta);
+
+  return [
+    (Math.pow((cos < 0 ? cos : 0), 2) + Math.pow(sin, 2)) * scale,
+    (Math.pow((cos > 0 ? cos : 0), 2) + Math.pow(sin, 2)) * scale,
+  ];
+}
+
 // mouse and touch events
 const mouseUpEvent = e => {
   e.preventDefault();
@@ -137,8 +162,8 @@ $('#canvas').addEventListener('touchmove', e => {
 $('#canvas').addEventListener('touchend', mouseUpEvent);
 $('#canvas').addEventListener('touchcancel', mouseUpEvent);
 
+// emit my position, throttled
 const sendPos = throttle((x, y) => socket.emit('pos', x, y), 25);
-// emit position, throttled
 function emitPos() {
   if (lastPos.x !== myPos.x && lastPos.y !== myPos.y) {
     sendPos(myPos.x, myPos.y);
@@ -150,9 +175,11 @@ function emitPos() {
 // render the canvas
 initCanvas().then(render => render((ctx, {sheet, delta, now}) => {
 
+  // where player should try to move to (cursor if mouse/touch is down)
   const goalX = !cursor.down ? myPos.x : (cursor.x - GAME_SIZE/2) / 2;
   const goalY = !cursor.down ? myPos.y : (cursor.y - GAME_SIZE/2) / 2;
 
+  // move player towards cursor
   if (Math.hypot(goalX - myPos.x, goalY - myPos.y) > 1) {
     const theta = Math.atan2(goalY - myPos.y, goalX - myPos.x);
     myPos.x += Math.cos(theta) * 64 * delta;
@@ -164,10 +191,14 @@ initCanvas().then(render => render((ctx, {sheet, delta, now}) => {
 
   emitPos();
 
+  // render my player
   sheet(25, 0)(ctx, {x: myPos.x, y: myPos.y});
+
+  // render cursor
   if (cursor.down)
     sheet(20, 14)(ctx, {x: goalX, y: goalY});
 
+  // render other players
   for (const p of players) {
     // smoothly interpolate player position towards the goal position
     p.pos.x += (p.goal.x - p.pos.x) * 5 * delta;
@@ -178,6 +209,24 @@ initCanvas().then(render => render((ctx, {sheet, delta, now}) => {
       x: p.pos.x,
       y: p.pos.y,
     });
+
+    if (p.stream) {
+      // console.log(calcVolumes(myPos, p.pos));
+      const [left, right] = calcVolumes(myPos, p.pos);
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.strokeStyle = '#00f';
+      ctx.moveTo(p.pos.x*2 - 10, p.pos.y*2);
+      ctx.lineTo(p.pos.x*2 - 10,p.pos.y*2 - 30 * left);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.strokeStyle = '#f00';
+      ctx.moveTo(p.pos.x*2 + 10, p.pos.y*2);
+      ctx.lineTo(p.pos.x*2 + 10,p.pos.y*2 - 30 * right);
+      ctx.stroke();
+      p.stream.setVolume(left, right);
+    }
+
   }
 }));
 
@@ -188,12 +237,70 @@ function getAudioStream() {
   return navigator.mediaDevices.getUserMedia({audio: true});
 }
 
+// split an audio stream into left and right channels
+class StreamSplit {
+  constructor(stream, {left=1, right=1}={}) {
+    console.log('new streamsplit');
+    this.stream = stream;
+
+    // create audio context using the stream as a source
+    const track = stream.getAudioTracks()[0];
+    this.context = new AudioContext();
+    this.source = this.context.createMediaStreamSource(new MediaStream([track]));
+
+    // create a channel for each ear (left, right)
+    this.channels = {
+      left: this.context.createGain(),
+      right: this.context.createGain(),
+    };
+
+    // connect the gains
+    this.source.connect(this.channels.left);
+    this.source.connect(this.channels.right);
+
+    // create a merger to join the two gains
+    const merger = this.context.createChannelMerger(2);
+    this.channels.left.connect(merger, 0, 0);
+    this.channels.right.connect(merger, 0, 1);
+
+    // set the volume for each side
+    this.setVolume(left, right);
+
+    // connect the merger to the audio context
+    merger.connect(this.context.destination);
+
+    this.destination = this.context.createMediaStreamDestination();
+    // stream.removeTrack(track);
+    // stream.addTrack(destination.stream.getAudioTracks()[0]);
+  }
+
+  // set the volume
+  setVolume(left=0, right=0) {
+    // clamp volumes between 0 and 1
+    left = Math.max(Math.min(left, 1), 0);
+    right = Math.max(Math.min(right, 1), 0);
+
+    // disable the stream if the volume is 0
+    this.stream.enabled = left !== 0 && right !== 0;
+
+    // set the volumes for each channel's gain
+    this.channels.left.gain.value = left;
+    this.channels.right.gain.value = right;
+  }
+
+  // close the context, stop the audio
+  close() {
+    return this.context.close();
+  }
+}
+
 // play an audio stream
 function playAudioStream(stream, target) {
   // create the video element for the stream
   const elem = document.createElement('video');
   elem.srcObject = stream;
-  elem.autoplay = 'autoplay';
+  elem.play();
+  elem.muted = true;
   elem.setAttribute('data-peer', target);
   elem.onloadedmetadata = () => elem.play();
 
@@ -230,8 +337,15 @@ async function startCall(target) {
 function receiveCall(call) {
   call.on('stream', stream => {
     // stream.noiseSuppression = true;
-    playAudioStream(stream, call.peer);
-    log('created stream for', call.peer);
+    const player = players.find(p => p.id === call.peer);
+    if (!player) {
+      console.log('couldn\'t find player for stream', call.peer);
+    } else {
+      player.stream = new StreamSplit(stream, {left: 1, right: 1});
+      playAudioStream(stream, call.peer);
+      log('created stream for', call.peer);
+    }
+    // playAudioStream(stream, call.peer);
   });
 }
 
@@ -276,11 +390,16 @@ socket.on('pos', (id, pos) => {
 });
 
 socket.on('leave', target => {
-  const elem = $(`[data-peer="${target}"]`);
   log('call dropped from', target);
+  const elem = $(`[data-peer="${target}"]`);
   if (elem) elem.remove();
 
   // remove player from players list
   const index = players.findIndex(p => p.id === target);
-  if (index > -1) players.splice(index, 1);
+  if (index > -1) {
+    // close the stream
+    if (players[index].stream)
+      players[index].stream.close();
+    players.splice(index, 1)
+  };
 });

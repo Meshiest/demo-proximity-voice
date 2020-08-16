@@ -1,7 +1,7 @@
 {
-  "name": "peer-voice-demo",
-  "version": "1.0.0",
-  "description": "A demo of a voice chatroom using peerjs",
+  "name": "peer-proxmity-voice-demo",
+  "version": "2.0.0",
+  "description": "A demo of a proximity voice chatroom using peerjs",
   "main": "main.js",
   "scripts": {
     "start": "node main.js"

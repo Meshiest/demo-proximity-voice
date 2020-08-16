@@ -1,6 +1,8 @@
-# Simple Peer Voice Chat
+# Simple Peer Proximity Voice Chat
 
-This is a demo for a group voice chat using peerjs to handle WebRTC and socket.io to help clients connect.
+The non-proximity base for this project is [demo-voice](https://github.com/Meshiest/demo-voice)
+
+This is a demo for a group proxmity voice chat using peerjs to handle WebRTC and socket.io to help clients connect.
 
 You need to generate a self-signed certificate to run this as voice media can only be used over secure connections:
 
