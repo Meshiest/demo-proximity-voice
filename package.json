@@ -2,7 +2,7 @@
   "name": "peer-voice-demo",
   "version": "1.0.0",
   "description": "A demo of a voice chatroom using peerjs",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
     "start": "node main.js"
   },
