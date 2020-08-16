@@ -229,8 +229,6 @@ initCanvas().then(render => render((ctx, {sheet, delta, now}) => {
   }
 }));
 
-navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-
 // get the current user's audio stream
 function getAudioStream() {
   return navigator.mediaDevices.getUserMedia({audio: true});
