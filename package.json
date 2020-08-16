@@ -1,0 +1,17 @@
+{
+  "name": "peer-voice-demo",
+  "version": "1.0.0",
+  "description": "A demo of a voice chatroom using peerjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "peer": "^0.5.3",
+    "socket.io": "^2.3.0",
+    "uuid": "^8.3.0"
+  }
+}
