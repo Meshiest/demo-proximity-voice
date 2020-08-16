@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node main.js"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Meshiest",
+  "license": "CC0 1.0 Universal",
   "dependencies": {
     "express": "^4.17.1",
     "peer": "^0.5.3",
