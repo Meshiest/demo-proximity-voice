@@ -1,8 +1,8 @@
 const $ = document.querySelector.bind(document);
 const log = (...args) => logs.innerText += args.join(' ') + '\n';
 const GAME_SIZE = 400;
-const SOUND_CUTOFF_RANGE = 50;
-const SOUND_NEAR_RANGE = 5;
+const SOUND_CUTOFF_RANGE = 100;
+const SOUND_NEAR_RANGE = 10;
 
 const socket = io();
 
@@ -38,7 +38,6 @@ function initSpritesheet(src, size) {
   const draw = (tx, ty) => (ctx, {x=0, y=0, rot=0, flipH=false, flipV=false}) => {
     if (ctx.rot !== 0 || ctx.flipH || ctx.flipV) {
       ctx.save();
-      ctx.translate(x, y);
       ctx.translate(x, y);
       ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
       if (rot !== 0)
@@ -176,14 +175,14 @@ function emitPos() {
 initCanvas().then(render => render((ctx, {sheet, delta, now}) => {
 
   // where player should try to move to (cursor if mouse/touch is down)
-  const goalX = !cursor.down ? myPos.x : (cursor.x - GAME_SIZE/2) / 2;
-  const goalY = !cursor.down ? myPos.y : (cursor.y - GAME_SIZE/2) / 2;
+  const goalX = !cursor.down ? myPos.x : (cursor.x - GAME_SIZE/2);
+  const goalY = !cursor.down ? myPos.y : (cursor.y - GAME_SIZE/2);
 
   // move player towards cursor
   if (Math.hypot(goalX - myPos.x, goalY - myPos.y) > 1) {
     const theta = Math.atan2(goalY - myPos.y, goalX - myPos.x);
-    myPos.x += Math.cos(theta) * 64 * delta;
-    myPos.y += Math.sin(theta) * 64 * delta;
+    myPos.x += Math.cos(theta) * 128 * delta;
+    myPos.y += Math.sin(theta) * 128 * delta;
   } else {
     myPos.x = Math.round(myPos.x);
     myPos.y = Math.round(myPos.y);
@@ -216,13 +215,13 @@ initCanvas().then(render => render((ctx, {sheet, delta, now}) => {
       ctx.lineWidth = 4;
       ctx.beginPath();
       ctx.strokeStyle = '#00f';
-      ctx.moveTo(p.pos.x*2 - 10, p.pos.y*2);
-      ctx.lineTo(p.pos.x*2 - 10,p.pos.y*2 - 30 * left);
+      ctx.moveTo(p.pos.x - 10, p.pos.y);
+      ctx.lineTo(p.pos.x - 10,p.pos.y - 30 * left);
       ctx.stroke();
       ctx.beginPath();
       ctx.strokeStyle = '#f00';
-      ctx.moveTo(p.pos.x*2 + 10, p.pos.y*2);
-      ctx.lineTo(p.pos.x*2 + 10,p.pos.y*2 - 30 * right);
+      ctx.moveTo(p.pos.x + 10, p.pos.y);
+      ctx.lineTo(p.pos.x + 10,p.pos.y - 30 * right);
       ctx.stroke();
       p.stream.setVolume(left, right);
     }
