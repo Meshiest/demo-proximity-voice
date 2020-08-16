@@ -20,7 +20,7 @@ const peerServer = ExpressPeerServer(server, {debug: true});
 
 // use peerjs with express
 app.use('/peerjs', peerServer);
-app.use(express.static('.'));
+app.use('/public', express.static('public'));
 
 // send index file
 app.get('/', (req, res) => {
