@@ -267,8 +267,6 @@ class StreamSplit {
     merger.connect(this.context.destination);
 
     this.destination = this.context.createMediaStreamDestination();
-    // stream.removeTrack(track);
-    // stream.addTrack(destination.stream.getAudioTracks()[0]);
   }
 
   // set the volume
