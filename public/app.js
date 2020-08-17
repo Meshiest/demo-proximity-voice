@@ -294,7 +294,6 @@ function playAudioStream(stream, target) {
   // create the video element for the stream
   const elem = document.createElement('video');
   elem.srcObject = stream;
-  elem.play();
   elem.muted = true;
   elem.setAttribute('data-peer', target);
   elem.onloadedmetadata = () => elem.play();
