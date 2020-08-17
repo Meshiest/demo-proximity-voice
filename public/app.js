@@ -237,7 +237,6 @@ function getAudioStream() {
 // split an audio stream into left and right channels
 class StreamSplit {
   constructor(stream, {left=1, right=1}={}) {
-    console.log('new streamsplit');
     this.stream = stream;
 
     // create audio context using the stream as a source
