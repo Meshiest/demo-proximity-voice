@@ -16,7 +16,20 @@ const SSL_CONFIG = {
 const app = express();
 const server = https.createServer(SSL_CONFIG, app);
 const io = require('socket.io')(server);
-const peerServer = ExpressPeerServer(server, {debug: true});
+
+// peerjs's express server is garbage and hijacks ALL websocket upgrades regardless of route
+const peerjsWrapper = {on(event, callback) {
+  if (event === 'upgrade') {
+    server.on('upgrade', (req, socket, head) => {
+      if (!req.url.startsWith('/socket.io/'))
+        callback(req, socket, head);
+    })
+  } else {
+    server.on(...arguments);
+  }
+}};
+
+const peerServer = ExpressPeerServer(peerjsWrapper);
 
 // use peerjs with express
 app.use('/peerjs', peerServer);
